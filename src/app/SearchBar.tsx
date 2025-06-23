@@ -1,32 +1,27 @@
-import { useState, useEffect, useRef } from 'react';
+
+import { useRef,useState,useEffect } from 'react';  
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { searchMovies } from '../../lib/api';
+import { useQuery } from '@tanstack/react-query';
 
 export default function SearchBar() {
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<any[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef(null);
   const router = useRouter();
 
-  useEffect(() => {
-    if (!query.trim()) {
-      setResults([]);
-      return;
-    }
-
-    const fetchResults = async () => {
-      try {
-        const movies = await searchMovies(query);
-        setResults(movies.slice(0, 5));
-      } catch (error) {
-        console.error('Error searching movies:', error);
-      }
-    };
-
-    fetchResults();
-  }, [query]);
+  const{
+    data: results = [],
+    isLoading,
+    isError,
+  } = useQuery<SearchResult[]>({
+    queryKey: ['search', query],
+    queryFn: () => searchMovies(query),
+    enabled: query.trim().length > 0,
+    select: (data) => data.slice(0, 5), 
+    staleTime: 1000 * 60
+  });
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -34,16 +29,17 @@ export default function SearchBar() {
     }
   };
 
+  const handleClickOutside = (event: MouseEvent) => {
+    if (dropdownRef.current && !(dropdownRef.current as any).contains(event.target)) {
+      setShowDropdown(false);
+    }
+  };
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !(dropdownRef.current as any).contains(event.target)) {
-        setShowDropdown(false);
-      }
-    };
-
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  });
 
   return (
     <div className="relative w-full" ref={dropdownRef}>
@@ -62,16 +58,18 @@ export default function SearchBar() {
         />
       </div>
 
-      {showDropdown && results.length > 0 && (
+      {showDropdown && !isError && (isLoading || results.length> 0) && (
         <ul className="absolute z-10 w-full mt-2 bg-white border border-gray-300 rounded shadow-lg">
-          {results.map((movie) => (
-            <li
-              key={movie.id}
-              className="flex items-center px-4 py-2 hover:bg-gray-100 cursor-pointer"
-              onClick={() => {
-              router.push(`/movie/${movie.id}`);
-              setShowDropdown(false);
-            }}
+          {isLoading
+            ? <li className="px-4 py-2 text-sm text-gray-500">Searching...</li>
+            : results.map((movie) => (
+              <li
+                key={movie.id}
+                className="flex items-center px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                onClick={() => {
+                  router.push(`/movie/${movie.id}`);
+                  setShowDropdown(false);
+                }}
           >
             {movie.poster_path && (
               <Image

@@ -1,31 +1,21 @@
-'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { getFeaturedMovies, getFeaturedSeries } from '../../lib/api';
+import { useQuery } from '@tanstack/react-query';
 import Image from 'next/image';
 import Link from 'next/link';
 import Skeleton from './Skeleton';
 
 export default function FeaturedToday() {
   const [activeTab, setActiveTab] = useState<'movie' | 'tv'>('movie');
-  const [items, setItems] = useState<any[]>([]);
+  
   const scrollContainer = useRef<HTMLDivElement>(null);
-  const [loading, setLoading] = useState(true);
 
-
-  useEffect(() => {
-  const fetchData = async () => {
-    setLoading(true);
-    // simula retraso de 1 segundo
-    setTimeout(async () => {
-      const data = activeTab === 'movie' ? await getFeaturedMovies() : await getFeaturedSeries();
-      setItems(data);
-      setLoading(false);
-    }, 1000);
-  };
-  fetchData();
-}, [activeTab]);
-
+  const { data: fetchedItems = [], isLoading } = useQuery<MediaItem[]>({
+  queryKey: ['featured', activeTab],
+  queryFn: async () =>
+    activeTab === 'movie' ? await getFeaturedMovies() : await getFeaturedSeries(),
+  staleTime: 1000 * 60,});
 
   const scroll = (direction: 'left' | 'right') => {
     if (scrollContainer.current) {
@@ -67,9 +57,13 @@ export default function FeaturedToday() {
           ref={scrollContainer}
           className="flex overflow-x-auto space-x-4 pb-4 scrollbar-hide px-12"
         >
-        {loading
-          ? Array.from({ length: 5 }).map((_, i) => <Skeleton key ={i}/>)
-          : items.map((item) => (
+        {isLoading ? (
+           <div className="flex space-x-4 overflow-x-auto scrollbar-hide pb-4 px-4">
+             {Array.from({ length: 5 }).map((_, index) => (
+              <Skeleton key={index} />
+            ))}
+            </div>
+          ) : (fetchedItems || []).map((item) => (
               <Link
                 key={item.id}
                 href={`/${activeTab}/${item.id}`}

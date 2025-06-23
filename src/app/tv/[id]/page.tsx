@@ -1,8 +1,21 @@
-import { getTVDetails } from '../../../../lib/api'
+// src/app/tv/[id]/page.tsx
+'use client';
+import { useParams } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
+import { getTVDetails } from '../../../../lib/api';
 import Image from 'next/image';
 
-export default async function TVPage({ params }: { params: { id: string } }) {
-  const tv = await getTVDetails(params.id);
+export default function TVPage() {
+  const { id } = useParams();
+
+  const { data: tv, isLoading, isError } = useQuery({
+    queryKey: ['tvDetails', id],
+    queryFn: () => getTVDetails(id as string),
+    staleTime: 1000 * 60,
+  });
+
+  if (isLoading) return <p className="text-center text-yellow-400">Loading...</p>;
+  if (isError || !tv) return <p className="text-center text-red-500">Error loading TV series.</p>;
 
   return (
     <div className="p-8 max-w-4xl mx-auto">

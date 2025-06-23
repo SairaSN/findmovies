@@ -22,6 +22,7 @@ export async function getFeaturedMovies() {
   const res = await fetch(
     `https://api.themoviedb.org/3/discover/movie?api_key=${process.env.NEXT_PUBLIC_TMDB_API_KEY}`
   );
+  if (!res.ok) throw new Error('Failed to fetch featured movies');
   const data = await res.json();
   return data.results.slice(0, 20); 
 }
@@ -30,6 +31,7 @@ export async function getFeaturedSeries() {
   const res = await fetch(
     `https://api.themoviedb.org/3/discover/tv?api_key=${process.env.NEXT_PUBLIC_TMDB_API_KEY}`
   );
+  if (!res.ok) throw new Error('Failed to fetch featured series');
   const data = await res.json();
   return data.results.slice(0, 20);
 }
@@ -63,5 +65,5 @@ export async function getMovieDetails(id: string) {
 export async function getTVDetails(id: string) {
   const res = await fetch(`${BASE_URL}/tv/${id}?api_key=${API_KEY}&language=en-US`);
   if (!res.ok) throw new Error('Failed to fetch TV details');
-  return res.json();
+  return res.json(); 
 }

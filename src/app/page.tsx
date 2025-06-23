@@ -1,3 +1,4 @@
+// File: src/app/page.tsx
 'use client'
 import Image from 'next/image';
 import SearchBar from './SearchBar';
@@ -27,8 +28,6 @@ export default function Home() {
       <div className="w-full max-w-7xl">
         <PremieresAnnouncements />
       </div>
-
-      {/* Aquí pondremos las secciones siguientes como "Featured Today", etc. */}
     </main>
   )
 }
